@@ -205,7 +205,7 @@ export default function InputPanel({ onSolve, onClear, error }) {
             placeholder="(a|b)*abb"
             spellCheck={false}
           />
-          <div style={{ marginTop: 6, fontSize: 11, color: 'var(--color-text-secondary)', lineHeight: 1.8 }}>
+          <div style={{ marginTop: 6, fontSize: 11, color: '#c9a800', lineHeight: 1.8 }}>
             Supports <code>*</code> <code>+</code> <code>?</code> <code>|</code> and <code>()</code><br />
             ⚠ Each character is one symbol — use single letters only
           </div>
@@ -225,7 +225,7 @@ export default function InputPanel({ onSolve, onClear, error }) {
       {error && <div className="error-box">{error}</div>}
 
       {isGrammar && (
-        <div style={{ marginTop: 20, fontSize: 11, color: 'var(--color-text-secondary)', lineHeight: 1.8 }}>
+        <div style={{ marginTop: 20, fontSize: 11, color: '#c9a800', lineHeight: 1.8 }}>
           <strong>Tips</strong><br />
           Use <code>eps</code> or <code>epsilon</code> for ε<br />
           ⚠ Put spaces between all symbols: <code>E + T</code> not <code>E+T</code><br />
