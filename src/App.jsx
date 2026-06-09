@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import InputPanel from './components/InputPanel.jsx';
+import Logo from './components/Logo.jsx';
 import AugmentedGrammar from './components/AugmentedGrammar.jsx';
 import FirstFollowBox from './components/FirstFollowBox.jsx';
 import StateCards from './components/StateCards.jsx';
@@ -161,7 +162,7 @@ export default function App() {
     <div className="app-layout">
       <header className="app-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <img src="/logo.png" alt="Parser Playground logo" style={{ height: 36, width: 36, borderRadius: 6, objectFit: 'cover' }} />
+          <Logo size={40} />
           <h1>Parser <span>Playground</span></h1>
         </div>
         <button className="theme-toggle" onClick={toggle}>{label}</button>
