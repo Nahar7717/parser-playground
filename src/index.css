@@ -420,6 +420,65 @@ body {
 .placeholder svg { opacity: 0.3; }
 .placeholder p { font-size: 13px; }
 
+/* ── NFA editor table ────────────────────────── */
+.nfa-table-wrap {
+  overflow-x: auto;
+  border: 0.5px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-secondary);
+}
+
+.nfa-table {
+  border-collapse: collapse;
+  font-size: 12px;
+  width: 100%;
+}
+
+.nfa-table th {
+  background: var(--color-bg-secondary);
+  font-weight: 500;
+  padding: 5px 8px;
+  text-align: center;
+  border: 0.5px solid var(--color-border);
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.nfa-table td {
+  border: 0.5px solid var(--color-border);
+  padding: 2px 4px;
+}
+
+.nfa-state-cell {
+  font-family: 'Menlo', 'Consolas', monospace;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 4px 8px !important;
+  background: var(--color-bg-secondary);
+  color: #185FA5;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.nfa-cell-input {
+  width: 100%;
+  min-width: 48px;
+  font-family: 'Menlo', 'Consolas', monospace;
+  font-size: 11px;
+  padding: 3px 5px;
+  background: var(--color-bg-primary);
+  border: none;
+  color: var(--color-text-primary);
+  outline: none;
+  text-align: center;
+}
+
+.nfa-cell-input:focus {
+  background: color-mix(in srgb, #185FA5 8%, var(--color-bg-primary));
+}
+
 /* ── Responsive ──────────────────────────────── */
 @media (max-width: 720px) {
   .app-layout {

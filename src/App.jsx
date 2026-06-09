@@ -7,19 +7,40 @@ import ParsingTable from './components/ParsingTable.jsx';
 import AutomatonSVG from './components/AutomatonSVG.jsx';
 import TraceTable from './components/TraceTable.jsx';
 import LL1Table from './components/LL1Table.jsx';
+import DirectDFAOutput from './components/DirectDFAOutput.jsx';
+import SubsetOutput from './components/SubsetOutput.jsx';
 
 import { parseGrammar, augmentGrammar } from './algorithms/grammar.js';
 import { computeFirst, computeFollow } from './algorithms/firstFollow.js';
 import { buildLR0Collection, buildLR1Collection, buildLALRCollection } from './algorithms/lrItems.js';
 import { buildSLRTable, buildLR1Table, parseLR } from './algorithms/tables.js';
 import { solveLL1 } from './algorithms/ll1.js';
+import { solveDirectDFA } from './algorithms/directDFA.js';
+import { solveSubset } from './algorithms/subsetConstruction.js';
 
-function solve(grammarText, method, inputStr) {
-  const grammar = parseGrammar(grammarText);
+function solve(params) {
+  const { method } = params;
+
+  if (method === 'DirectDFA') {
+    return solveDirectDFA(params.regex || '');
+  }
+
+  if (method === 'SubsetConstr') {
+    const { nfa } = params;
+    return solveSubset({
+      nfaStates: nfa.states,
+      symbols: nfa.symbols,
+      startState: nfa.start,
+      acceptStates: nfa.accept,
+      transitions: nfa.trans,
+    });
+  }
+
+  const grammar = parseGrammar(params.grammar);
   if (!grammar) throw new Error('Could not parse grammar. Check formatting.');
 
   if (method === 'LL1') {
-    const result = solveLL1(grammar, inputStr || '');
+    const result = solveLL1(grammar, params.inputStr || '');
     return { method, grammar, ...result };
   }
 
@@ -41,7 +62,7 @@ function solve(grammarText, method, inputStr) {
     tables = buildLR1Table(augGrammar, states, transitions);
   }
 
-  const trace = inputStr ? parseLR(augGrammar, tables, inputStr) : null;
+  const trace = params.inputStr ? parseLR(augGrammar, tables, params.inputStr) : null;
 
   return {
     method, grammar, augGrammar, firstSets, followSets,
@@ -50,40 +71,27 @@ function solve(grammarText, method, inputStr) {
 }
 
 // ── Theme toggle ───────────────────────────────
-
 function useTheme() {
   const [theme, setTheme] = useState('auto');
-
   React.useEffect(() => {
-    if (theme === 'auto') {
-      document.documentElement.removeAttribute('data-theme');
-    } else {
-      document.documentElement.setAttribute('data-theme', theme);
-    }
+    if (theme === 'auto') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
-
   const toggle = () => setTheme(t => t === 'dark' ? 'light' : t === 'light' ? 'auto' : 'dark');
   const label = theme === 'dark' ? '☀ Light' : theme === 'light' ? '◑ Auto' : '☾ Dark';
   return { toggle, label };
 }
 
-// ── Output for LR methods ──────────────────────
-
+// ── LR Output ──────────────────────────────────
 function LROutput({ result }) {
   const { method, augGrammar, firstSets, followSets, states, transitions, tables, trace } = result;
-
-  // Non-terminals for GOTO (exclude augmented start)
   const allNTs = [...augGrammar.nonTerminals];
-
   return (
     <div>
       <AugmentedGrammar productions={augGrammar.productions} />
-      <FirstFollowBox
-        nonTerminals={allNTs}
-        firstSets={firstSets}
-        followSets={followSets}
-      />
+      <FirstFollowBox nonTerminals={allNTs} firstSets={firstSets} followSets={followSets} />
       <StateCards states={states} method={method} />
+      <AutomatonSVG states={states} transitions={transitions} augGrammar={augGrammar} method={method} />
       <ParsingTable
         states={states}
         terminals={augGrammar.terminals}
@@ -93,33 +101,18 @@ function LROutput({ result }) {
         augProductions={augGrammar.productions}
         conflicts={tables.conflicts}
       />
-      <AutomatonSVG
-        states={states}
-        transitions={transitions}
-        augGrammar={augGrammar}
-        method={method}
-      />
       {trace && <TraceTable steps={trace} title={`Parse Trace (${method})`} />}
     </div>
   );
 }
 
-// ── Output for LL(1) ──────────────────────────
-
+// ── LL1 Output ─────────────────────────────────
 function LL1Output({ result }) {
   const { factored, firstSets, followSets, table, conflicts, trace } = result;
-
   return (
     <div>
-      <AugmentedGrammar
-        productions={factored.productions}
-        title="Left-Factored Grammar"
-      />
-      <FirstFollowBox
-        nonTerminals={[...factored.nonTerminals]}
-        firstSets={firstSets}
-        followSets={followSets}
-      />
+      <AugmentedGrammar productions={factored.productions} title="Left-Factored Grammar" />
+      <FirstFollowBox nonTerminals={[...factored.nonTerminals]} firstSets={firstSets} followSets={followSets} />
       <LL1Table grammar={factored} table={table} conflicts={conflicts} />
       {trace && <TraceTable steps={trace} title="Parse Trace (LL1)" />}
     </div>
@@ -127,7 +120,6 @@ function LL1Output({ result }) {
 }
 
 // ── Placeholder ────────────────────────────────
-
 function Placeholder() {
   return (
     <div className="placeholder">
@@ -137,24 +129,23 @@ function Placeholder() {
         <rect x="26" y="28" width="18" height="14" rx="4" stroke="currentColor" strokeWidth="1.5"/>
         <path d="M22 23h4M22 23c0-5 4-8 4-8M22 23c0 5 4 8 4 8" stroke="currentColor" strokeWidth="1.2" fill="none"/>
       </svg>
-      <p>Enter a grammar and click <strong>Solve</strong></p>
-      <p style={{ fontSize: 12 }}>Supports SLR(1) · CLR(1) · LALR(1) · LL(1)</p>
+      <p>Configure input and click <strong>Solve</strong></p>
+      <p style={{ fontSize: 12 }}>SLR(1) · CLR(1) · LALR(1) · LL(1) · Direct DFA · Subset Construction</p>
     </div>
   );
 }
 
 // ── App ────────────────────────────────────────
-
 export default function App() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const { toggle, label } = useTheme();
 
-  const handleSolve = useCallback(({ grammar, method, inputStr }) => {
+  const handleSolve = useCallback((params) => {
     setError('');
     setResult(null);
     try {
-      const r = solve(grammar, method, inputStr);
+      const r = solve(params);
       setResult(r);
     } catch (e) {
       setError(e.message);
@@ -179,8 +170,10 @@ export default function App() {
 
       <main className="output-main">
         {!result && !error && <Placeholder />}
-        {result && result.method === 'LL1' && <LL1Output result={result} />}
-        {result && result.method !== 'LL1' && <LROutput result={result} />}
+        {result?.method === 'LL1'        && <LL1Output      result={result} />}
+        {result?.method === 'DirectDFA'  && <DirectDFAOutput result={result} />}
+        {result?.method === 'SubsetConstr' && <SubsetOutput  result={result} />}
+        {result && !['LL1','DirectDFA','SubsetConstr'].includes(result.method) && <LROutput result={result} />}
       </main>
     </div>
   );
