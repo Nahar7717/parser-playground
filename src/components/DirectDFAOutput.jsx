@@ -63,15 +63,13 @@ function StateConstructionTable({ dfaMap, nameMap, order, symbols, posSymbol, en
               const state = dfaMap.get(key);
               const name = nameMap.get(key);
               const positions = [...state.positions].sort((a, b) => a - b);
-              const posStr = positions
-                .map(p => `${subNum(p)}(${posSymbol.get(p)})`)
-                .join(', ');
+              const posStr = positions.join(', ');
               return (
                 <tr key={key}>
                   <td className="state-col" style={{ color: '#185FA5', fontWeight: 600 }}>
                     {name}
                   </td>
-                  <td style={{ fontFamily: 'Menlo,Consolas,monospace', fontSize: 11 }}>
+                  <td style={{ fontFamily: 'Menlo,Consolas,monospace', fontSize: 15, fontWeight: 600 }}>
                     {`{${posStr}}`}
                   </td>
                   {symbols.map(sym => {

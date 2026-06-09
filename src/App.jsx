@@ -160,7 +160,10 @@ export default function App() {
   return (
     <div className="app-layout">
       <header className="app-header">
-        <h1>Parser <span>Playground</span></h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <img src="/logo.png" alt="Parser Playground logo" style={{ height: 36, width: 36, borderRadius: 6, objectFit: 'cover' }} />
+          <h1>Parser <span>Playground</span></h1>
+        </div>
         <button className="theme-toggle" onClick={toggle}>{label}</button>
       </header>
 
