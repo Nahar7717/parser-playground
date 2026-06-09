@@ -3,15 +3,14 @@
  */
 import React, { useMemo } from 'react';
 
-const R       = 40;    // node radius
-const COLS    = 5;     // max per row
-const COL_GAP = 220;   // centre-to-centre horizontal
-const ROW_GAP = 220;   // centre-to-centre vertical
-const PAD_X   = 90;    // left/right padding
-const PAD_BOT = 60;    // bottom padding
+const R       = 38;
+const COLS    = 5;
+const COL_GAP = 210;
+const ROW_GAP = 220;
+const PAD_X   = 90;
+const PAD_BOT = 50;
 
-// ── Layout ──────────────────────────────────────────────────────────────────
-// Returns positions with Y offset applied AFTER we know how tall the back-arcs are
+// ── Layout ───────────────────────────────────────────────────────────────────
 function layout(order, topPad) {
   const pos = new Map();
   order.forEach((key, idx) => {
@@ -19,13 +18,13 @@ function layout(order, topPad) {
     const row = Math.floor(idx / COLS);
     pos.set(key, { x: PAD_X + col * COL_GAP, y: topPad + row * ROW_GAP });
   });
-  const last = order.length - 1;
-  const W = PAD_X + Math.min(last, COLS - 1) * COL_GAP + PAD_X;
-  const H = topPad + Math.floor(last / COLS) * ROW_GAP + PAD_BOT;
+  const last  = order.length - 1;
+  const W     = PAD_X + Math.min(last, COLS - 1) * COL_GAP + PAD_X;
+  const H     = topPad + Math.floor(last / COLS) * ROW_GAP + PAD_BOT;
   return { pos, W: Math.max(W, PAD_X * 2 + COL_GAP), H };
 }
 
-// ── Group transitions by (from, to) ─────────────────────────────────────────
+// ── Group transitions ────────────────────────────────────────────────────────
 function buildEdges(order, dfaMap) {
   const edgeMap = new Map();
   for (const fromKey of order) {
@@ -40,83 +39,96 @@ function buildEdges(order, dfaMap) {
   return [...edgeMap.values()];
 }
 
-// ── Path between two circle centres ─────────────────────────────────────────
+// ── SVG path ─────────────────────────────────────────────────────────────────
+// All states on one horizontal row — arcs go UP for back edges, DOWN for
+// bidirectional forward edges.  We explicitly use ±Y, never the rotated perp.
 function circleEdge(px, py, qx, qy, isSelf, fromIdx, toIdx, hasReverse) {
-  // Self-loop: arc above the node
+  const gap = Math.abs(fromIdx - toIdx);
+
+  // Self-loop — arc above node
   if (isSelf) {
+    const loopH = 75;
     return {
-      d: `M ${px - 16} ${py - R} C ${px - 50} ${py - R - 80} ${px + 50} ${py - R - 80} ${px + 16} ${py - R}`,
-      lx: px, ly: py - R - 64,
+      d: `M ${px - 18} ${py - R} C ${px - 55} ${py - R - loopH} ${px + 55} ${py - R - loopH} ${px + 18} ${py - R}`,
+      lx: px, ly: py - R - loopH - 4,
     };
   }
 
-  const dx = qx - px, dy = qy - py;
-  const dist = Math.sqrt(dx * dx + dy * dy);
-  const ux = dx / dist, uy = dy / dist;
-  const perpX = -uy, perpY = ux;
+  const dx   = qx - px;
+  const dist = Math.abs(dx);                  // always horizontal (same row)
+  const ux   = dx / dist;                      // +1 forward, -1 backward
 
-  // Entry/exit points on circle borders
-  const sx = px + ux * R, sy = py + uy * R;
-  const ex = qx - ux * R, ey = qy - uy * R;
+  const sx = px + ux * R;                      // edge start on circle border
+  const ex = qx - ux * R;                      // edge end   on circle border
+  const mx = (sx + ex) / 2;
+  const my = py;                               // same y (horizontal row)
 
   const isBack = toIdx < fromIdx;
-  const gap    = Math.abs(fromIdx - toIdx); // how many states apart
-
-  // Back edges arc ABOVE (negative y direction) scaled by distance
-  // Forward edges with a reverse counterpart curve slightly to avoid overlap
-  let curve = 0;
-  let sign  = 1;
 
   if (isBack) {
-    // Arc height grows with distance so long back edges clear over states
-    curve = 40 + gap * 28;
-    sign  = -1; // curve upward (negative y)
-  } else if (hasReverse) {
-    curve = 30;
-    sign  = 1;  // curve downward
+    // Arc upward — control point above the midpoint
+    // Use increasing heights per gap so arcs don't overlap
+    const arcH = 50 + gap * 36;
+    const cpx  = mx;
+    const cpy  = my - arcH;
+    // Label at top of arc
+    return {
+      d: `M ${sx.toFixed(1)} ${sy(py, ux, R)} Q ${cpx.toFixed(1)} ${cpy.toFixed(1)} ${ex.toFixed(1)} ${sy(py, -ux, R)}`,
+      lx: cpx, ly: cpy - 10,
+    };
   }
 
-  const mx = (sx + ex) / 2, my = (sy + ey) / 2;
-
-  if (curve === 0) {
-    return { d: `M ${sx.toFixed(1)} ${sy.toFixed(1)} L ${ex.toFixed(1)} ${ey.toFixed(1)}`, lx: mx, ly: my };
+  if (hasReverse) {
+    // Curve downward so it doesn't overlap the back-arc
+    const arcH = 40;
+    const cpx  = mx;
+    const cpy  = my + arcH;
+    return {
+      d: `M ${sx.toFixed(1)} ${my.toFixed(1)} Q ${cpx.toFixed(1)} ${cpy.toFixed(1)} ${ex.toFixed(1)} ${my.toFixed(1)}`,
+      lx: cpx, ly: cpy + 10,
+    };
   }
 
-  const cpx = mx + perpX * sign * curve;
-  const cpy = my + perpY * sign * curve;
-
-  // Label sits at 60% along the curve (closer to destination, less crowding at midpoint)
-  const t = 0.5;
-  const lx = (1 - t) * (1 - t) * sx + 2 * (1 - t) * t * cpx + t * t * ex;
-  const ly = (1 - t) * (1 - t) * sy + 2 * (1 - t) * t * cpy + t * t * ey;
-
+  // Straight
   return {
-    d: `M ${sx.toFixed(1)} ${sy.toFixed(1)} Q ${cpx.toFixed(1)} ${cpy.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}`,
-    lx, ly,
+    d: `M ${sx.toFixed(1)} ${my.toFixed(1)} L ${ex.toFixed(1)} ${my.toFixed(1)}`,
+    lx: mx, ly: my - 14,
   };
 }
 
-// ── Component ────────────────────────────────────────────────────────────────
+// helper — Y coordinate on circle border for horizontal edge
+function sy(cy, ux, r) { return cy; }  // horizontal: start/end at centre-y
+
+// ── Component ─────────────────────────────────────────────────────────────────
 export default function DFADiagram({ dfaMap, nameMap, order, startKey }) {
-  const edges = useMemo(() => buildEdges(order, dfaMap), [order, dfaMap]);
+  const edges      = useMemo(() => buildEdges(order, dfaMap), [order, dfaMap]);
   const edgeKeySet = new Set(edges.map(e => `${e.from}→${e.to}`));
 
-  // How high do back-arcs go above the node row? Use that as top padding.
+  // Top padding = height of tallest back-arc + room for labels + self-loop
   const topPad = useMemo(() => {
-    let maxArc = 60; // minimum: room for self-loops + start arrow
+    let maxUp = 80;   // minimum for self-loops
     for (const e of edges) {
       const fi = order.indexOf(e.from), ti = order.indexOf(e.to);
       if (ti < fi) {
-        // arc peaks at: curve = 40 + gap*28, label at midpoint ≈ curve above node
-        const arcHeight = 40 + Math.abs(fi - ti) * 28 + 24; // +24 for label
-        maxArc = Math.max(maxArc, arcHeight);
+        const arcH = 50 + Math.abs(fi - ti) * 36;
+        maxUp = Math.max(maxUp, arcH + 28);  // +28 for label above arc
       }
     }
-    return maxArc + 20;
+    return maxUp + 20;
   }, [edges, order]);
 
   const { pos, W, H } = useMemo(() => layout(order, topPad), [order, topPad]);
-  const svgH = H;
+
+  // Bottom padding for downward arcs of bidirectional edges
+  const botExtra = useMemo(() => {
+    for (const e of edges) {
+      const hasRev = edgeKeySet.has(`${e.to}→${e.from}`);
+      if (hasRev && order.indexOf(e.to) > order.indexOf(e.from)) return 80;
+    }
+    return 10;
+  }, [edges, edgeKeySet, order]);
+
+  const svgH = H + botExtra;
 
   return (
     <>
@@ -137,9 +149,9 @@ export default function DFADiagram({ dfaMap, nameMap, order, startKey }) {
             if (!sp) return null;
             return (
               <g>
-                <line x1={sp.x - R - 36} y1={sp.y} x2={sp.x - R - 2} y2={sp.y}
-                  stroke="#888" strokeWidth={1.5} markerEnd="url(#dfa-arr)" />
-                <text x={sp.x - R - 40} y={sp.y - 7}
+                <line x1={sp.x - R - 38} y1={sp.y} x2={sp.x - R - 2} y2={sp.y}
+                  stroke="#888" strokeWidth={1.6} markerEnd="url(#dfa-arr)" />
+                <text x={sp.x - R - 42} y={sp.y - 8}
                   textAnchor="end" fontSize={10} fill="var(--color-text-secondary)">start</text>
               </g>
             );
@@ -155,33 +167,33 @@ export default function DFADiagram({ dfaMap, nameMap, order, startKey }) {
             const hasReverse = !isSelf && edgeKeySet.has(`${edge.to}→${edge.from}`);
             const { d, lx, ly } = circleEdge(fp.x, fp.y, tp.x, tp.y, isSelf, fromIdx, toIdx, hasReverse);
             const label  = edge.labels.join(', ');
-            const labelW = label.length * 7 + 10;
+            const labelW = label.length * 7.5 + 12;
 
             return (
               <g key={ei}>
-                <path d={d} fill="none" stroke="#888" strokeWidth={1.4}
+                <path d={d} fill="none" stroke="#888" strokeWidth={1.5}
                   markerEnd="url(#dfa-arr)" />
-                <rect x={lx - labelW / 2} y={ly - 10} width={labelW} height={18}
+                <rect x={lx - labelW / 2} y={ly - 10} width={labelW} height={20}
                   rx="4" fill="var(--color-bg-primary)"
-                  stroke="var(--color-border)" strokeWidth={0.5} />
+                  stroke="var(--color-border)" strokeWidth={0.8} />
                 <text x={lx} y={ly + 1} textAnchor="middle" dominantBaseline="middle"
                   fontSize={12} fontFamily="'Menlo','Consolas',monospace"
-                  fill="var(--color-text-primary)">
+                  fontWeight={600} fill="var(--color-text-primary)">
                   {label}
                 </text>
               </g>
             );
           })}
 
-          {/* State circles (drawn on top of edges) */}
+          {/* Nodes — drawn last so they sit on top of edges */}
           {order.map(key => {
-            const p = pos.get(key);
+            const p      = pos.get(key);
             if (!p) return null;
-            const state    = dfaMap.get(key);
+            const state  = dfaMap.get(key);
             const isStart  = key === startKey;
             const isAccept = state?.accepting;
-            const name     = nameMap.get(key) ?? key;
-            const color    = isStart ? '#185FA5' : isAccept ? '#0F6E56' : '#533AB7';
+            const name   = nameMap.get(key) ?? key;
+            const color  = isStart ? '#185FA5' : isAccept ? '#0F6E56' : '#533AB7';
 
             return (
               <g key={key}>
@@ -189,12 +201,11 @@ export default function DFADiagram({ dfaMap, nameMap, order, startKey }) {
                   fill="var(--color-bg-secondary)" stroke={color} strokeWidth={isStart ? 2.5 : 1.8} />
                 {isAccept && (
                   <circle cx={p.x} cy={p.y} r={R - 6}
-                    fill="none" stroke={color} strokeWidth={1.2} />
+                    fill="none" stroke={color} strokeWidth={1.3} />
                 )}
                 <text x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle"
                   fontSize={13} fontWeight={700}
-                  fontFamily="'Menlo','Consolas',monospace"
-                  fill={color}>
+                  fontFamily="'Menlo','Consolas',monospace" fill={color}>
                   {name}
                 </text>
               </g>
