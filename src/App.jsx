@@ -49,7 +49,7 @@ function solve(params) {
   const firstSets = computeFirst(augGrammar);
   const followSets = computeFollow(augGrammar, firstSets);
 
-  let states, transitions, tables;
+  let states, transitions, tables, mergedNames;
 
   if (method === 'SLR') {
     ({ states, transitions } = buildLR0Collection(augGrammar));
@@ -58,7 +58,7 @@ function solve(params) {
     ({ states, transitions } = buildLR1Collection(augGrammar, firstSets));
     tables = buildLR1Table(augGrammar, states, transitions);
   } else if (method === 'LALR') {
-    ({ states, transitions } = buildLALRCollection(augGrammar, firstSets));
+    ({ states, transitions, mergedNames } = buildLALRCollection(augGrammar, firstSets));
     tables = buildLR1Table(augGrammar, states, transitions);
   }
 
@@ -66,7 +66,7 @@ function solve(params) {
 
   return {
     method, grammar, augGrammar, firstSets, followSets,
-    states, transitions, tables, trace,
+    states, transitions, tables, trace, mergedNames,
   };
 }
 
@@ -84,14 +84,14 @@ function useTheme() {
 
 // ── LR Output ──────────────────────────────────
 function LROutput({ result }) {
-  const { method, augGrammar, firstSets, followSets, states, transitions, tables, trace } = result;
+  const { method, augGrammar, firstSets, followSets, states, transitions, tables, trace, mergedNames } = result;
   const allNTs = [...augGrammar.nonTerminals];
   return (
     <div>
       <AugmentedGrammar productions={augGrammar.productions} />
       <FirstFollowBox nonTerminals={allNTs} firstSets={firstSets} followSets={followSets} />
-      <StateCards states={states} method={method} />
-      <AutomatonSVG states={states} transitions={transitions} augGrammar={augGrammar} method={method} />
+      <StateCards states={states} method={method} mergedNames={mergedNames} />
+      <AutomatonSVG states={states} transitions={transitions} augGrammar={augGrammar} method={method} mergedNames={mergedNames} />
       <ParsingTable
         states={states}
         terminals={augGrammar.terminals}

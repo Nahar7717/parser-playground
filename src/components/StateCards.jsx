@@ -18,7 +18,7 @@ function ItemRow({ item }) {
   );
 }
 
-export default function StateCards({ states, method }) {
+export default function StateCards({ states, method, mergedNames }) {
   return (
     <>
       <div className="section-header">
@@ -27,7 +27,7 @@ export default function StateCards({ states, method }) {
       <div className="states-grid">
         {states.map((items, i) => (
           <div className="state-card" key={i}>
-            <div className="state-card-header">I{i}</div>
+            <div className="state-card-header">I{mergedNames?.[i] ?? i}</div>
             {items.map((item, j) => (
               <ItemRow key={j} item={item} />
             ))}

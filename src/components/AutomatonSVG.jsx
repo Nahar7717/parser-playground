@@ -200,7 +200,7 @@ function ItemRow({ item, y, stateW }) {
 }
 
 // ── Main component ─────────────────────────────
-export default function AutomatonSVG({ states, transitions, augGrammar, method }) {
+export default function AutomatonSVG({ states, transitions, augGrammar, method, mergedNames }) {
   const { pos, grouped, totalW, totalH } = useMemo(
     () => computeLayout(states, transitions),
     [states, transitions]
@@ -274,11 +274,16 @@ export default function AutomatonSVG({ states, transitions, augGrammar, method }
             const grp = grouped[i];
             const inc = incoming.get(i);
 
-            // Header label: I₀ or I₂ — goto(I₀, N)
-            let headerLabel = `I${sub(i)}`;
-            if (i === 0) headerLabel = `I${sub(i)}`;
-            else if (type === 'accept') headerLabel = `I${sub(i)}  —  accept`;
-            else if (inc) headerLabel = `I${sub(i)}  —  goto(I${sub(inc.from)}, ${inc.symbol})`;
+            // Header label: I₀ or I₆₉ (LALR merged) — goto(...)
+            const rawName = mergedNames?.[i] ?? String(i);
+            const stateLabel = 'I' + [...rawName].map(d => sub(+d)).join('');
+            let headerLabel = stateLabel;
+            if (type === 'accept') headerLabel = `${stateLabel}  —  accept`;
+            else if (inc) {
+              const incRaw = mergedNames?.[inc.from] ?? String(inc.from);
+              const incLabel = 'I' + [...incRaw].map(d => sub(+d)).join('');
+              headerLabel = `${stateLabel}  —  goto(${incLabel}, ${inc.symbol})`;
+            }
 
             return (
               <g key={i} transform={`translate(${p.x},${p.y})`}>

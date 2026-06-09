@@ -174,6 +174,7 @@ export function buildLALRCollection(augGrammar, firstSets) {
   // Assign each lr1 state index to a merged (LALR) state index
   const lr1ToLALR = new Array(lr1States.length);
   const lalrStates = [];
+  const mergedNames = []; // parallel to lalrStates: e.g. "69" for merged I6+I9
 
   for (const [, idxs] of coreMap) {
     const lalrIdx = lalrStates.length;
@@ -195,6 +196,8 @@ export function buildLALRCollection(augGrammar, firstSets) {
         merged.push({ lhs: it.lhs, rhs: it.rhs, dot: it.dot, lookahead: la });
     }
     lalrStates.push(merged);
+    // Name: if only one source state, just that index; if merged, join them e.g. "69"
+    mergedNames.push(idxs.slice().sort((a, b) => a - b).join(''));
   }
 
   // Remap transitions
@@ -206,5 +209,5 @@ export function buildLALRCollection(augGrammar, firstSets) {
     if (!seen.has(k)) { seen.add(k); transitions.push({ from: mf, symbol, to: mt }); }
   }
 
-  return { states: lalrStates, transitions };
+  return { states: lalrStates, transitions, mergedNames };
 }
