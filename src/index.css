@@ -219,7 +219,7 @@ body {
 /* ── Augmented grammar ───────────────────────── */
 .aug-grammar {
   font-family: 'Menlo', 'Consolas', monospace;
-  font-size: 12px;
+  font-size: 14px;
   background: var(--color-bg-secondary);
   border: 0.5px solid var(--color-border);
   border-radius: 6px;
@@ -236,7 +236,7 @@ body {
 /* ── FIRST/FOLLOW box ────────────────────────── */
 .ff-box {
   font-family: 'Menlo', 'Consolas', monospace;
-  font-size: 12px;
+  font-size: 14px;
   background: var(--color-bg-secondary);
   border: 0.5px solid var(--color-border);
   border-radius: 6px;
@@ -272,7 +272,7 @@ body {
 
 .item-row {
   font-family: 'Menlo', 'Consolas', monospace;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 2;
   display: flex;
   justify-content: space-between;
@@ -301,14 +301,14 @@ body {
 
 .parsing-table {
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 15px;
   min-width: 100%;
 }
 
 .parsing-table th {
   background: var(--color-bg-secondary);
-  font-weight: 500;
-  padding: 6px 8px;
+  font-weight: 600;
+  padding: 8px 12px;
   text-align: center;
   border: 0.5px solid var(--color-border);
   position: sticky;
@@ -318,10 +318,10 @@ body {
 
 .parsing-table td {
   border: 0.5px solid var(--color-border);
-  padding: 6px 8px;
+  padding: 8px 12px;
   text-align: center;
   font-family: 'Menlo', 'Consolas', monospace;
-  min-width: 44px;
+  min-width: 48px;
 }
 
 .parsing-table .state-col {
@@ -363,21 +363,21 @@ body {
 /* ── Trace table ─────────────────────────────── */
 .trace-table {
   border-collapse: collapse;
-  font-size: 11.5px;
+  font-size: 14px;
   width: 100%;
 }
 
 .trace-table th {
   background: var(--color-bg-secondary);
-  font-weight: 500;
-  padding: 6px 8px;
+  font-weight: 600;
+  padding: 8px 12px;
   text-align: left;
   border: 0.5px solid var(--color-border);
 }
 
 .trace-table td {
   border: 0.5px solid var(--color-border);
-  padding: 5px 8px;
+  padding: 7px 12px;
   vertical-align: middle;
   line-height: 1.5;
 }
