@@ -3,24 +3,26 @@
  */
 import React, { useMemo } from 'react';
 
-const R      = 36;    // node radius
-const COLS   = 5;     // max per row
-const COL_GAP = 200;  // centre-to-centre horizontal
-const ROW_GAP = 200;  // centre-to-centre vertical
-const PAD    = 80;    // outer padding
+const R       = 40;    // node radius
+const COLS    = 5;     // max per row
+const COL_GAP = 220;   // centre-to-centre horizontal
+const ROW_GAP = 220;   // centre-to-centre vertical
+const PAD_X   = 90;    // left/right padding
+const PAD_BOT = 60;    // bottom padding
 
 // ── Layout ──────────────────────────────────────────────────────────────────
-function layout(order) {
+// Returns positions with Y offset applied AFTER we know how tall the back-arcs are
+function layout(order, topPad) {
   const pos = new Map();
   order.forEach((key, idx) => {
     const col = idx % COLS;
     const row = Math.floor(idx / COLS);
-    pos.set(key, { x: PAD + col * COL_GAP, y: PAD + row * ROW_GAP });
+    pos.set(key, { x: PAD_X + col * COL_GAP, y: topPad + row * ROW_GAP });
   });
   const last = order.length - 1;
-  const W = PAD + (Math.min(last, COLS - 1)) * COL_GAP + PAD;
-  const H = PAD + Math.floor(last / COLS) * ROW_GAP + PAD;
-  return { pos, W: Math.max(W, PAD * 2 + COL_GAP), H: Math.max(H, PAD * 2) };
+  const W = PAD_X + Math.min(last, COLS - 1) * COL_GAP + PAD_X;
+  const H = topPad + Math.floor(last / COLS) * ROW_GAP + PAD_BOT;
+  return { pos, W: Math.max(W, PAD_X * 2 + COL_GAP), H };
 }
 
 // ── Group transitions by (from, to) ─────────────────────────────────────────
@@ -96,26 +98,30 @@ function circleEdge(px, py, qx, qy, isSelf, fromIdx, toIdx, hasReverse) {
 
 // ── Component ────────────────────────────────────────────────────────────────
 export default function DFADiagram({ dfaMap, nameMap, order, startKey }) {
-  const { pos, W, H } = useMemo(() => layout(order), [order]);
   const edges = useMemo(() => buildEdges(order, dfaMap), [order, dfaMap]);
   const edgeKeySet = new Set(edges.map(e => `${e.from}→${e.to}`));
 
-  // Extra vertical space needed for tall back-edge arcs
-  const maxBackArc = useMemo(() => {
-    let extra = 0;
+  // How high do back-arcs go above the node row? Use that as top padding.
+  const topPad = useMemo(() => {
+    let maxArc = 60; // minimum: room for self-loops + start arrow
     for (const e of edges) {
       const fi = order.indexOf(e.from), ti = order.indexOf(e.to);
-      if (ti < fi) extra = Math.max(extra, 40 + Math.abs(fi - ti) * 28);
+      if (ti < fi) {
+        // arc peaks at: curve = 40 + gap*28, label at midpoint ≈ curve above node
+        const arcHeight = 40 + Math.abs(fi - ti) * 28 + 24; // +24 for label
+        maxArc = Math.max(maxArc, arcHeight);
+      }
     }
-    return extra;
+    return maxArc + 20;
   }, [edges, order]);
 
-  const svgH = H + maxBackArc;
+  const { pos, W, H } = useMemo(() => layout(order, topPad), [order, topPad]);
+  const svgH = H;
 
   return (
     <>
       <div className="section-header">DFA Diagram</div>
-      <div className="automaton-wrap">
+      <div className="automaton-wrap dfa-wrap">
         <svg width={W} height={svgH} style={{ display: 'block' }}>
           <defs>
             <marker id="dfa-arr" viewBox="0 0 10 10" refX="8" refY="5"

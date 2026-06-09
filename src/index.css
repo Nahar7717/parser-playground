@@ -355,6 +355,11 @@ body {
   max-height: 600px;
 }
 
+/* DFA diagram: no height cap, shows full arc height */
+.automaton-wrap.dfa-wrap {
+  max-height: none;
+}
+
 /* ── Trace table ─────────────────────────────── */
 .trace-table {
   border-collapse: collapse;
