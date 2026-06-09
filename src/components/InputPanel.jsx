@@ -162,7 +162,6 @@ export default function InputPanel({ onSolve, onClear, error }) {
         </optgroup>
         <optgroup label="Automata">
           <option value="DirectDFA">Direct DFA</option>
-          <option value="SubsetConstr">Subset Construction</option>
         </optgroup>
       </select>
 
