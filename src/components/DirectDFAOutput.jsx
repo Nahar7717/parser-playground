@@ -13,7 +13,7 @@ function FollowposTable({ fpMap, posSymbol }) {
     <>
       <div className="section-header">Followpos Table</div>
       <div className="table-scroll">
-        <table className="parsing-table">
+        <table className="parsing-table" style={{ fontSize: 15 }}>
           <thead>
             <tr>
               <th>Position</th>
@@ -26,12 +26,12 @@ function FollowposTable({ fpMap, posSymbol }) {
               const fp = [...(fpMap.get(pos) ?? [])].sort((a, b) => a - b);
               return (
                 <tr key={pos}>
-                  <td className="state-col">{subNum(pos)}</td>
-                  <td style={{ fontFamily: 'Menlo,Consolas,monospace' }}>
+                  <td className="state-col" style={{ fontSize: 15, fontWeight: 700 }}>{pos}</td>
+                  <td style={{ fontFamily: 'Menlo,Consolas,monospace', fontSize: 15, fontWeight: 600 }}>
                     {posSymbol.get(pos)}
                   </td>
-                  <td style={{ fontFamily: 'Menlo,Consolas,monospace' }}>
-                    {fp.length ? `{${fp.map(subNum).join(', ')}}` : '∅'}
+                  <td style={{ fontFamily: 'Menlo,Consolas,monospace', fontSize: 15, fontWeight: 600 }}>
+                    {fp.length ? `{${fp.join(', ')}}` : '∅'}
                   </td>
                 </tr>
               );
@@ -49,7 +49,7 @@ function StateConstructionTable({ dfaMap, nameMap, order, symbols, posSymbol, en
     <>
       <div className="section-header">DFA State Construction</div>
       <div className="table-scroll">
-        <table className="parsing-table">
+        <table className="parsing-table" style={{ fontSize: 15 }}>
           <thead>
             <tr>
               <th>State</th>
@@ -66,7 +66,7 @@ function StateConstructionTable({ dfaMap, nameMap, order, symbols, posSymbol, en
               const posStr = positions.join(', ');
               return (
                 <tr key={key}>
-                  <td className="state-col" style={{ color: '#185FA5', fontWeight: 600 }}>
+                  <td className="state-col" style={{ color: '#185FA5', fontWeight: 700, fontSize: 15 }}>
                     {name}
                   </td>
                   <td style={{ fontFamily: 'Menlo,Consolas,monospace', fontSize: 15, fontWeight: 600 }}>
