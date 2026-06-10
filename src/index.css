@@ -386,8 +386,8 @@ body {
   font-family: 'Menlo', 'Consolas', monospace;
 }
 
-.trace-row-accept { background: #EAF3DE; }
-.trace-row-error, .trace-row-panic { background: #FEF2F2; }
+.trace-row-accept { background: color-mix(in srgb, #0F6E56 14%, var(--color-bg-primary)); }
+.trace-row-error, .trace-row-panic { background: color-mix(in srgb, #A32D2D 14%, var(--color-bg-primary)); }
 
 .trace-type-p { color: #185FA5; font-weight: 600; font-size: 11px; }
 .trace-type-m { color: #0F6E56; font-weight: 600; font-size: 11px; }
