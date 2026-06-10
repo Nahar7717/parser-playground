@@ -18,6 +18,7 @@ function rowClass(type) {
 
 export default function TraceTable({ steps, title }) {
   if (!steps || steps.length === 0) return null;
+  const hasSymbols = steps.some(s => s.symbols != null);
 
   return (
     <>
@@ -28,6 +29,7 @@ export default function TraceTable({ steps, title }) {
             <tr>
               <th style={{ width: 36 }}>#</th>
               <th>Stack</th>
+              {hasSymbols && <th>Symbols</th>}
               <th>Remaining Input</th>
               <th>Action</th>
               <th style={{ width: 50 }}>Type</th>
@@ -39,7 +41,12 @@ export default function TraceTable({ steps, title }) {
               return (
                 <tr key={row.step} className={rowClass(row.type)}>
                   <td style={{ textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: 11 }}>{row.step}</td>
-                  <td className="mono" style={{ maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.stack}</td>
+                  <td className="mono" style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.stack}</td>
+                  {hasSymbols && (
+                    <td className="mono" style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#0F6E56' }}>
+                      {row.symbols ?? ''}
+                    </td>
+                  )}
                   <td className="mono">{row.remaining}</td>
                   <td style={{ fontSize: 11.5 }}>{row.action}</td>
                   <td style={{ textAlign: 'center' }}>

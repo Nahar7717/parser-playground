@@ -115,13 +115,14 @@ export function parseLR(augGrammar, tables, inputStr) {
     const a = tokens[ip] ?? '$';
 
     const stackStr = stateStack.join(' ');
+    const symStr   = '$ ' + symStack.join(' ');
     const remStr = tokens.slice(ip).join(' ');
 
     const actions = tables.action[state]?.get(a);
 
     if (!actions || actions.length === 0) {
       steps.push({
-        step: ++step, stack: stackStr, remaining: remStr,
+        step: ++step, stack: stackStr, symbols: symStr, remaining: remStr,
         action: `Error: no action for (${state}, ${a})`, type: 'error',
       });
       break;
@@ -130,13 +131,13 @@ export function parseLR(augGrammar, tables, inputStr) {
     const act = actions[0];
 
     if (act.type === 'accept') {
-      steps.push({ step: ++step, stack: stackStr, remaining: remStr, action: 'Accept', type: 'accept' });
+      steps.push({ step: ++step, stack: stackStr, symbols: symStr, remaining: remStr, action: 'Accept', type: 'accept' });
       break;
     }
 
     if (act.type === 'shift') {
       steps.push({
-        step: ++step, stack: stackStr, remaining: remStr,
+        step: ++step, stack: stackStr, symbols: symStr, remaining: remStr,
         action: `Shift  s${act.state}`, type: 'shift',
       });
       symStack.push(a);
@@ -147,7 +148,7 @@ export function parseLR(augGrammar, tables, inputStr) {
       const realLen = (rhs.length === 1 && rhs[0] === 'ε') ? 0 : rhs.length;
 
       steps.push({
-        step: ++step, stack: stackStr, remaining: remStr,
+        step: ++step, stack: stackStr, symbols: symStr, remaining: remStr,
         action: `Reduce  ${lhs} → ${rhs.join(' ')}`, type: 'reduce',
       });
 
@@ -157,7 +158,7 @@ export function parseLR(augGrammar, tables, inputStr) {
       const next = tables.goto[top]?.get(lhs);
       if (next === undefined) {
         steps.push({
-          step: ++step, stack: stateStack.join(' '), remaining: remStr,
+          step: ++step, stack: stateStack.join(' '), symbols: '$ ' + symStack.join(' '), remaining: remStr,
           action: `Error: no GOTO(${top}, ${lhs})`, type: 'error',
         });
         break;
