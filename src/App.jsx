@@ -109,10 +109,15 @@ function LROutput({ result }) {
 
 // ── LL1 Output ─────────────────────────────────
 function LL1Output({ result }) {
-  const { factored, firstSets, followSets, table, conflicts, trace } = result;
+  const { grammar, noLR, factored, firstSets, followSets, table, conflicts, trace } = result;
+  const hadLeftRecursion = grammar && noLR &&
+    [...noLR.nonTerminals].some(nt => !grammar.nonTerminals.has(nt));
   return (
     <div>
-      <AugmentedGrammar productions={factored.productions} title="Left-Factored Grammar" />
+      {hadLeftRecursion && (
+        <AugmentedGrammar productions={noLR.productions} title="After Left-Recursion Elimination" />
+      )}
+      <AugmentedGrammar productions={factored.productions} title="After Left-Factoring" />
       <FirstFollowBox nonTerminals={[...factored.nonTerminals]} firstSets={firstSets} followSets={followSets} />
       <LL1Table grammar={factored} table={table} conflicts={conflicts} />
       {trace && <TraceTable steps={trace} title="Parse Trace (LL1)" />}

@@ -4,6 +4,94 @@
 
 import { computeFirst, computeFollow, firstOfSequence } from './firstFollow.js';
 
+// ── Left-recursion elimination ─────────────────
+// Handles direct and indirect left recursion.
+// Algorithm: order NTs A1..An; for each Ai, substitute Aj (j<i) productions,
+// then eliminate direct left recursion on Ai.
+
+export function eliminateLeftRecursion(grammar) {
+  const allNTs = new Set(grammar.nonTerminals);
+
+  function freshNT(base) {
+    let name = base + "'";
+    while (allNTs.has(name)) name += "'";
+    allNTs.add(name);
+    return name;
+  }
+
+  // Build ordered NT list and production map
+  const ntOrder = [...grammar.nonTerminals];
+  const prodMap = new Map(); // NT -> rhs[][]
+  for (const nt of ntOrder) prodMap.set(nt, []);
+  for (const { lhs, rhs } of grammar.productions) {
+    prodMap.get(lhs)?.push(rhs);
+  }
+
+  for (let i = 0; i < ntOrder.length; i++) {
+    const Ai = ntOrder[i];
+
+    // Step 1: substitute Aj (j < i) at the start of each Ai production
+    for (let j = 0; j < i; j++) {
+      const Aj = ntOrder[j];
+      const newRhsList = [];
+      for (const rhs of prodMap.get(Ai)) {
+        if (rhs[0] === Aj) {
+          // Replace Aj with each Aj-production
+          for (const ajRhs of prodMap.get(Aj)) {
+            const ajBody = ajRhs[0] === 'ε' ? [] : ajRhs;
+            newRhsList.push([...ajBody, ...rhs.slice(1)]);
+          }
+        } else {
+          newRhsList.push(rhs);
+        }
+      }
+      prodMap.set(Ai, newRhsList);
+    }
+
+    // Step 2: eliminate direct left recursion on Ai
+    const recursive    = prodMap.get(Ai).filter(rhs => rhs[0] === Ai);
+    const nonRecursive = prodMap.get(Ai).filter(rhs => rhs[0] !== Ai);
+
+    if (recursive.length === 0) continue; // no direct left recursion
+
+    const Ai1 = freshNT(Ai); // new NT Ai'
+    ntOrder.push(Ai1);
+    prodMap.set(Ai1, []);
+
+    // Ai  -> β Ai'  for each non-recursive β
+    prodMap.set(Ai, nonRecursive.length
+      ? nonRecursive.map(beta => {
+          const b = beta[0] === 'ε' ? [] : beta;
+          return [...b, Ai1];
+        })
+      : [['ε', Ai1]] // if no non-recursive alternative, add ε Ai' placeholder
+    );
+
+    // Ai' -> α Ai' | ε  for each recursive α (where Ai -> Ai α)
+    for (const rhs of recursive) {
+      const alpha = rhs.slice(1); // strip leading Ai
+      prodMap.get(Ai1).push(alpha.length ? [...alpha, Ai1] : [Ai1]);
+    }
+    prodMap.get(Ai1).push(['ε']);
+  }
+
+  // Flatten back to productions array (preserving NT order)
+  const productions = [];
+  for (const nt of ntOrder) {
+    for (const rhs of (prodMap.get(nt) ?? [])) {
+      productions.push({ lhs: nt, rhs });
+    }
+  }
+
+  const nonTerminals = new Set(productions.map(p => p.lhs));
+  const terminals = new Set();
+  for (const { rhs } of productions)
+    for (const s of rhs)
+      if (s !== 'ε' && !nonTerminals.has(s)) terminals.add(s);
+
+  return { ...grammar, productions, nonTerminals, terminals };
+}
+
 // ── Left factoring ─────────────────────────────
 
 export function leftFactor(grammar) {
@@ -195,11 +283,12 @@ export function parseLL1(grammar, table, inputStr) {
 // ── Full LL(1) solve ───────────────────────────
 
 export function solveLL1(grammar, inputStr) {
-  const factored = leftFactor(grammar);
+  const noLR    = eliminateLeftRecursion(grammar);
+  const factored = leftFactor(noLR);
   const firstSets = computeFirst(factored);
   const followSets = computeFollow(factored, firstSets);
   const { table, conflicts } = buildLL1Table(factored, firstSets, followSets);
   const trace = inputStr ? parseLL1(factored, table, inputStr) : null;
 
-  return { factored, firstSets, followSets, table, conflicts, trace };
+  return { noLR, factored, firstSets, followSets, table, conflicts, trace };
 }
