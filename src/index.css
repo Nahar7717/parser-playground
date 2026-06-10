@@ -94,8 +94,9 @@ body {
 }
 
 .output-main {
-  padding: 20px 24px;
+  padding: 20px 24px 80px;
   overflow-y: auto;
+  max-height: calc(100vh - 49px);
 }
 
 /* ── Input Panel ─────────────────────────────── */
