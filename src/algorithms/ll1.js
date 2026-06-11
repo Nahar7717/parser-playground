@@ -232,7 +232,7 @@ export function parseLL1(grammar, table, inputStr) {
     const a = tokens[ip] ?? '$';
 
     // Display stack top-to-bottom (reverse for display)
-    const stackStr = [...stack].reverse().join(' ');
+    const stackStr = stack.join(' ');
     const remStr = tokens.slice(ip).join(' ');
 
     if (top === '$' && a === '$') {
